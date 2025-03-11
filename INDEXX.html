@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
+        h2 { background-color: #3e6b8e; color: white; padding: 15px; border-radius: 5px; }
+        #categoryFilter { padding: 10px; margin-bottom: 20px; }
+        .product-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .product { 
+            width: 250px; 
+            margin: 10px; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            text-align: center; 
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .second-life-text {
+            font-size: 0.8em;
+            color: black;
+            margin-bottom: 5px;
+            position: absolute;
+            top: 20px; 
+            right: 5px;
+            font-weight: bold;
+        }
+        .old-price { 
+            text-decoration: line-through; 
+            color: #8e8e8e; 
+        }
+        .new-price { 
+            color: #5e9cdb; 
+            font-weight: bold; 
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); 
+            padding-top: 60px;
+            background-size: cover;
+            background-position: center;
+        }
+        .modal-content {
+            background-color: rgba(255, 255, 255, 0.9); 
+            margin: auto;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 80%;
+            color: #333;
+            text-align: left;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .product-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .product img {
+            cursor: pointer;
+            width: 100%;
+            height: auto;
+        }
+        .buy-now {
+            background-color: #5e9cdb;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .buy-now:hover {
+            background-color: #4a8bbf;
+        }
+        .image-container {
+            width: 100%;
+            height: 200px; 
+            background-color: #f4f4f9;
+            border-radius: 5px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <h2>Second Life</h2>
+    
+    <label for="categoryFilter">Filter by category: </label>
+    <select id="categoryFilter" onchange="filterProducts()">
+        <option value="">All Categories</option>
+        <option value="Bikes">Bikes</option>
+        <option value="Gym Equipment">Gym Equipment</option>
+        <option value="Trampoline">Trampoline</option>
+    </select>
+
+    <div id="products" class="product-container"></div>
+
+    
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const sheetURL = "https://script.google.com/macros/s/AKfycbxzYBP8Ty3mlacJTwu-Q6Y0MevJlANgFZDwhIkBJZvvXrDOaXLCcxDFv-J-8ayyTy4c/exec";
+        let allProducts = [];
+
+        async function loadProducts() {
+            try {
+                const response = await fetch(sheetURL);
+                allProducts = await response.json();
+                displayProducts(allProducts);
+            } catch (error) {
+                console.error("Error loading products:", error);
+            }
+        }
+
+        function displayProducts(products) {
+            document.getElementById("products").innerHTML = products.map((p, index) => `
+                <div class="product">
+                    <div class="second-life-text">Second Life</div>
+                    <!-- Mini Container for Image -->
+                    <div class="image-container">
+                        <img src="${p.image}" alt="${p.name}" onclick="openModal(${index}, '${p.image}')">
+                    </div>
+                    <div class="product-info">
+                        <h4>${p.name}</h4>
+                        <p><span class="old-price">KES ${p.oldPrice}</span><span class="new-price">KES ${p.newPrice}</span></p>
+                        <button class="buy-now" onclick="buyNow('${p.name}')">Buy Now</button>
+                    </div>
+                </div>
+            `).join('');
+        } 
+
+        function filterProducts() {
+            const category = document.getElementById("categoryFilter").value.toLowerCase();
+            const filtered = category ? allProducts.filter(p => p.category.toLowerCase() === category) : allProducts;
+            displayProducts(filtered);
+        }
+
+        function openModal(index, image) {
+            const product = allProducts[index];
+            const modalContent = `
+                <h2>${product.name}</h2>
+                <p><strong>Price:</strong> KES ${product.newPrice}</p>
+                <p><strong>Old Price:</strong> KES ${product.oldPrice}</p>
+                <p><strong>Description:</strong> ${product.description}</p>
+                <p><strong>Star Rating:</strong> ⭐ ${product.starRating}</p>
+                <p><strong>Location:</strong> ${product.location}</p>
+                <p><strong>Quantity:</strong> ${product.quantity}</p>
+                <button onclick="addToCart('${product.name}')">Add to Cart</button>
+            `;
+            
+            const modal = document.getElementById("productModal");
+            modal.style.backgroundImage = `url(${image})`;
+            modal.style.display = "block";
+            document.getElementById("modalContent").innerHTML = modalContent;
+        }
+
+        function closeModal() {
+            document.getElementById("productModal").style.display = "none";
+        }
+
+        function addToCart(productName) {
+            alert(`${productName} has been added to your cart!`);
+        }
+
+        function buyNow(productName) {
+            alert(`You have chosen to buy ${productName} now!`);
+        }
+
+        document.addEventListener("DOMContentLoaded", loadProducts);
+    </script>
+</body>
+</html>
